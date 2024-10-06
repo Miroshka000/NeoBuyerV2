@@ -1,0 +1,6 @@
+name: NeoBuyer
+version: 2.0.0
+api: ["1.0.5"]
+author: SocialMoods
+main: ru.SocialMoods.Buyer
+depend: ["FormConstructor", "EconomyAPI"]
