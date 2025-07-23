@@ -6,10 +6,10 @@ import cn.nukkit.level.Level;
 import cn.nukkit.level.Sound;
 import com.formconstructor.form.CustomForm;
 import com.formconstructor.form.SimpleForm;
-import com.formconstructor.form.element.custom.Label;
+
 import com.formconstructor.form.element.custom.Slider;
 import com.formconstructor.form.element.custom.Toggle;
-import com.formconstructor.form.element.simple.Button;
+import com.formconstructor.form.element.general.Label;
 import com.formconstructor.form.element.simple.ImageType;
 import me.onebone.economyapi.EconomyAPI;
 import ru.SocialMoods.Buyer;
@@ -31,6 +31,8 @@ public class BuyerForm {
         Iterator<Entry<Integer, ShopItem>> var4 = plugin.getShopItems().entrySet().iterator();
         PriceCalculator priceCalculator = new PriceCalculator(plugin);
 
+        form.addContent(formContentTemplate);
+
         while (var4.hasNext()) {
             Entry<Integer, ShopItem> entry = var4.next();
             ShopItem shopItem = entry.getValue();
@@ -39,21 +41,25 @@ public class BuyerForm {
                     .replace("{item_name}", shopItem.getItemName())
                     .replace("{item_count}", String.valueOf(shopItem.getCount()))
                     .replace("{price}", String.valueOf(adjustedPrice));
-            Button button = new Button(buttonText);
-            button.onClick((pl, b) -> openItemForm(pl, plugin, shopItem, adjustedPrice));
-            form.addButton(button);
+                    
             String imageUrl = shopItem.getImageUrl();
             if (imageUrl != null && !imageUrl.isEmpty()) {
-                button.setImage(ImageType.URL, imageUrl);
+                form.addButton(buttonText, ImageType.PATH, imageUrl, (pl, button) -> 
+                    openItemForm(pl, plugin, shopItem, adjustedPrice));
+            } else {
+                form.addButton(buttonText, (pl, button) -> 
+                    openItemForm(pl, plugin, shopItem, adjustedPrice));
             }
         }
-        Button tutorialB = new Button(tutorialButton);
-        tutorialB.onClick((pl, button) -> ShowTutorialForm(pl, plugin));
-        form.addButton(tutorialB);
-        form.addContent(formContentTemplate);
-        form.setNoneHandler((pl) -> {});
+        
+        form.addButton(tutorialButton, (pl, button) -> 
+            ShowTutorialForm(pl, plugin));
+        
+        form.setCloseHandler(pl -> {});
+        
         form.send(player);
     }
+    
     private static void openItemForm(Player player, Buyer plugin, ShopItem shopItem, int adjustedPrice) {
         String successMsg = plugin.getConfig().getString("buyer-form.messages.success");
 
@@ -72,7 +78,7 @@ public class BuyerForm {
                 .replace("{price}", String.valueOf(shopItem.getPrice()))
                 .replace("{available}", String.valueOf(itemCountInInventory))));
 
-        itemForm.addElement("slider", new Slider("Выберите количество предметов:", 1, Math.min(64, itemCountInInventory), 1, 1));
+        itemForm.addElement("slider", new Slider("Выберите количество предметов:", 1f, Math.min(64, itemCountInInventory), 1, 1));
 
         itemForm.setHandler((pl, response) -> {
             if (response == null) {
@@ -110,6 +116,7 @@ public class BuyerForm {
                 pl.sendMessage(plugin.getConfig().getString("buyer-form.messages.not-enough-items"));
             }
         });
+        
         itemForm.send(player);
     }
 
@@ -127,14 +134,14 @@ public class BuyerForm {
                 .replace("{ratio}", formattedRatio)
                 .replace("{level-ratio}", levelRatio);
 
-        Button close = new Button("Назад");
-        close.onClick((pl, b) -> openBuyerForm(pl, plugin));
-        Button settings = new Button("Настройки");
-        settings.onClick((pl, b) -> openSettingsForm(pl, plugin));
-
         tutorial.addContent(tutorialContent);
-        tutorial.addButton(settings);
-        tutorial.addButton(close);
+        
+        tutorial.addButton("Настройки", (pl, button) -> 
+            openSettingsForm(pl, plugin));
+            
+        tutorial.addButton("Назад", (pl, button) -> 
+            openBuyerForm(pl, plugin));
+            
         tutorial.send(player);
     }
 
@@ -148,15 +155,14 @@ public class BuyerForm {
         String status = isAutoBuyerEnabled ? "Подключен" : "Отключен";
         form.addElement(new Label(plugin.getConfig().getString("settings-form.status-label").replace("{status}", status)));
 
-        Toggle toggle = new Toggle(plugin.getConfig().getString("settings-form.toggle-label"), isAutoBuyerEnabled);
-        form.addElement(toggle);
+        form.addElement("toggle", new Toggle(plugin.getConfig().getString("settings-form.toggle-label"), isAutoBuyerEnabled));
 
         form.setHandler((pl, response) -> {
             if (response == null) {
                 return;
             }
 
-            boolean isEnabled = response.getToggle(1).getValue();
+            boolean isEnabled = response.getToggle("toggle").getValue();
 
             if (isEnabled) {
                 for (ShopItem shopItem : plugin.getShopItems().values()) {

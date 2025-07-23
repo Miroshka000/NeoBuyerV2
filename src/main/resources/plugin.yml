@@ -1,6 +1,8 @@
 name: NeoBuyer
-version: 2.0.0
+version: ${version}
 api: ["1.0.5"]
-author: SocialMoods
+authors:
+  - Miroshka/ForgePlugins Studio
+  - SocialMoods
 main: ru.SocialMoods.Buyer
 depend: ["FormConstructor", "EconomyAPI"]
